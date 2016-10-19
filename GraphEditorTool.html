@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<title>Graph Editor Tool</title>
+
+<style>
+
+* { margin:0; padding:0; } /* to remove the top and left whitespace */
+
+html, body { width:100%; height:100%; } /* just to be sure these are full screen*/
+
+canvas { display:block; position:absolute;} /* To remove the scrollbars */
+
+/* to show the canvas bounds */
+canvas {
+    background: #FFFFFF;
+}
+
+/* Dropdown Button */
+.dropbtn {
+    //background-color: #4CAF50;
+    background-color: #f4511e;
+    color: white;
+    padding: 16px;
+    font-size: 16px;
+    border: none;
+    cursor: pointer;
+    //position:absolute;
+}
+
+/* The container <div> - needed to position the dropdown content */
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+/* Dropdown Content (Hidden by Default) */
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #f9f9f9;
+    min-width: 160px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+}
+
+/* Links inside the dropdown */
+.dropdown-content a {
+    color: black;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: block;
+}
+
+/* Change color of dropdown links on hover */
+.dropdown-content a:hover {background-color: #f1f1f1}
+
+/* Show the dropdown menu on hover */
+.dropdown:hover .dropdown-content {
+    display: block;
+}
+
+/* Change the background color of the dropdown button when the dropdown content is shown */
+.dropdown:hover .dropbtn {
+    background-color: #3e8e41;
+}
+
+//Drop Down Menu was taken from the tutorial at W3S schools:
+//http://www.w3schools.com/howto/howto_css_dropdown.asp
+
+
+</style>
+
+<body>
+
+<canvas id="canvas" style="border:1px solid #000000;"></canvas>
+
+<div class="dropdown">
+  <button class="dropbtn">Menu</button>
+  <div class="dropdown-content">
+    <a href="#" id="create">Create Graph</a>
+    <a href="#" id="adj">Print Adjency List</a>
+    <a href="#" id="matrix">Print Matrix</a>
+    <a href="#">Generate Graph</a>
+    <a href="#" id="find">Find Element</a>
+    <a href="#" id="connectivity">Check Connectivity</a>
+    <a href="#" id="dijkstra">Dijkstra's</a>
+    <a href="#" id="level">Find Level of Element</a>
+    <a href="#">Detect Cycles</a>
+    <a href="#" id="bfs">BFS Animation</a>
+    <a href="#">DFS Animation</a>
+    <a href="#">Prim's Algorithm</a>
+    <a href="#">Floyd Warshall's Algorithm</a>
+    <a href="#">All Pairs Shortest Paths (Dijkstra)</a>
+    <a href="#" id="children">Number of Children</a>
+    <a href="#" id = "bipartite">Bipartite Check</a>
+    <a href="#" id = "disjoint">Disjoint Set Queries</a>
+  </div>
+</div>
+
+
+<script>
+console.log ("Welcome to the console! Here you can find the adjacency list and matrix prints outs, if you click on the option under menu. Happy Coding :)");
+
+var positionsX = [];
+var positionsY = [];
+var graph = [];
+var c = document.getElementById("canvas");
+var ctx = c.getContext("2d");
+var nodeSize = 20;
+var start = 0;
+var nodes;
+var weighted;
+var directed;
+//The above will prob be referenced by multiple functions, so keep them global
+
+document.getElementById("create").onclick = function () {
+positionsX = [];
+positionsY = [];
+graph = [];
+var input = prompt ("Enter Graph Input", "20 19 11 1 1 2 13 3 15 4 17 5 11 6 2 7 1 8 15 9 4 10 15 12 5 13 2 14 17 15 15 16 11 17 15 18 9 19 16 20");
+var list = input.match(/\d+/g);
+nodes = parseInt(list[0]);
+var numberOfedges = parseInt(list[1]);
+//Input done here^
+for (var x = 0; x <= nodes; x++) {
+	graph.push([]);
+}
+// built the barebones of graph adjency list^
+var a; var b; var w; var pair;
+weighted = prompt ("if weighted press 1, else press 0", "0");
+directed = prompt ("if directed press 1, else press 0", "0");
+if (weighted == 1) {
+	for (var x = 2; x <= list.length - 1; x+=3) {
+		a = parseInt(list[x]);
+    b = parseInt(list[x + 1]);
+    w = parseInt(list[x + 2]);
+    pair = [b, w];
+    graph[a].push(pair);
+    if (directed != 1) {
+			pair = [a, w];
+    	graph[b].push(pair);
+		}
+  }
+} else if (weighted != 1) {
+	for (var x = 2; x <= list.length - 1; x+=2) {
+    a = parseInt(list[x]);
+    b = parseInt(list[x + 1]);
+    graph[a].push(b);
+    if (directed != 1) {
+			graph[b].push(a);
+    }
+	}
+}
+// create rest of adjacency list^
+
+var counter = 0;
+if (graph[0].length == 0) {
+	start = 1;
+}
+ctx.globalCompositeOperation='destination-over';
+(function() {
+        var canvas = document.getElementById('canvas'),
+                context = canvas.getContext('2d');
+
+        // resize the canvas to fill browser window dynamically
+        window.addEventListener('resize', resizeCanvas, false);
+        
+        function resizeCanvas() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                counter = start;
+                if (start == 1) {
+                	//to set up the indexing
+									positionsX[0] = 0;
+                  positionsY[0] = 0;
+                }
+                for (var x = start; x <= nodes; x++) {
+									drawStuff();
+                  counter++;
+								}
+                if (weighted != 1 && directed != 1) {
+									for (var z = start; z < graph.length; z++) {
+                    for (var i = 0; i < graph[z].length; i++) {
+											drawEdgeUndirected (z, graph[z][i]);
+                    }
+                  }
+								} else if (weighted != 1 && directed == 1) {
+									for (var z = start; z < graph.length; z++) {
+                    for (var i = 0; i < graph[z].length; i++) {
+											drawEdgeDirected (z, graph[z][i]);
+                    }
+                  }
+								} else if (weighted == 1 && directed != 1) {
+									for (var z = start; z < graph.length; z++) {
+                    for (var i = 0; i < graph[z].length; i++) {
+											drawEdgeUndirected (z, graph[z][i][0]);
+                      addWeight (z, graph[z][i][0], graph[z][i][1]);
+                    }
+                  }
+								} else if (weighted == 1 && directed == 1) {
+									for (var z = start; z < graph.length; z++) {
+                    for (var i = 0; i < graph[z].length; i++) {
+											drawEdgeDirected (z, graph[z][i][0]);
+                      addWeight (z, graph[z][i][0], graph[z][i][1]);
+                    }
+                  }
+								}
+        }
+        resizeCanvas();
+        
+        function drawStuff() {
+                // do your drawing stuff here
+                ctx.font="15px Georgia";
+								ctx.beginPath();
+                ctx.fillStyle="white";
+                var posX = Math.random() * screen.width/1.10;
+                var posY = Math.random() * screen.height/1.10;
+                ctx.arc(posX, posY, nodeSize, 0, 2 * Math.PI);
+                ctx.fill();
+                positionsX.push(posX);
+                positionsY.push(posY);
+                ctx.fillStyle="black";
+                if (counter < 10) {
+                	ctx.fillText(counter, posX - 3, posY + 3);
+                } else {
+                	ctx.fillText(counter, posX - 6, posY + 3);
+                }
+                ctx.stroke();
+        }
+        
+        function drawEdgeUndirected (a, b) {
+        	ctx.globalCompositeOperation="destination-over";
+          ctx.strokeStyle = randomColor();
+          ctx.lineWidth = 2;
+					ctx.beginPath();
+  				ctx.moveTo(positionsX[a] + 1, positionsY[a] + 1);
+					ctx.lineTo(positionsX[b] + 1, positionsY[b] + 1);
+					ctx.stroke();
+				}
+        function addWeight (a, b, c) {
+        	ctx.globalCompositeOperation="source-over";
+          ctx.font = "20px Arial";
+          ctx.fillText(c, (positionsX[a] + positionsX[b])/2, (positionsY[a] + positionsY[b])/2);
+				}
+        function drawEdgeDirected (a, b) {
+        	ctx.globalCompositeOperation="destination-over";
+          //Add gradient to show direction
+          var grd = ctx.createLinearGradient(positionsX[a] + 1, positionsY[a] + 1, positionsX[b] + 1, positionsY[b] + 1);
+					grd.addColorStop(0,"black");
+					grd.addColorStop(1, randomColor());
+					ctx.strokeStyle = grd;
+          ////////////////////////////////
+          ctx.lineWidth = 2;
+					ctx.beginPath();
+  				ctx.moveTo(positionsX[a] + 1, positionsY[a] + 1);
+					ctx.lineTo(positionsX[b] + 1, positionsY[b] + 1);
+					ctx.stroke();
+				}
+})();
+
+}
+
+//TODO:
+//Add some kind of system to avoid collisions of nodes (perhaps BST?)
+//TBH any kind of naive solution would work just fine, due to # of nodes
+//End of Graph Construction Phase
+/////////////////////////////////////////////////////////////////////////
+
+document.getElementById("adj").onclick = function () {
+	for (var x = start; x < graph.length; x++) {
+		if (weighted == 1) {
+				console.log (x + ": " + graph[x]);
+	    } else {
+				console.log (x + ": " + graph[x]);
+	    }
+		}
+	}
+
+//Print adjacency list to console code
+/////////////////////////////////////////////////////////////////////////
+
+document.getElementById("matrix").onclick = function () {
+	if (graph.length > 20000) {
+		alert ("Graph is too big! The matrix would have to hold " + graph.length * graph.length + " integers!");
+  } else {
+  	//alert ("Matrix rows and columns start from node " + start);
+		var matrix = [];
+    var temp = [];
+    for (var x = 0; x < graph.length; x++) {
+			temp.push(0);
+    }
+    for (var x = 0; x < graph.length; x++) {
+			matrix.push(temp);
+      for (var i = 0; i < graph[x].length; x++) {
+				if (weighted == 1) {
+					matrix[x][graph[x][i][0]] = 1;
+        } else {
+        	matrix[x][graph[x][i]] = 1;
+        }
+      }
+      console.log (matrix[x]);
+    }
+	}
+}
+
+//Needs work that I am too tired to do right now :(
+//Above is code for printing adjacency matrix to console
+/////////////////////////////////////////////////////////////////////////
+document.getElementById("find").onclick = function () {
+	ctx.globalCompositeOperation='source-over';
+  var findElement = prompt ("Which element would you like to find?");
+  if (findElement > nodes || findElement < start)  {
+		alert ("The Element Does Not Exist :(");
+	} else {
+  	ctx.font="15px Georgia";
+		ctx.beginPath();
+  	ctx.fillStyle="orange";
+  	ctx.arc(positionsX[findElement], positionsY[findElement], nodeSize, 0, 2 * Math.PI);
+  	ctx.fill();
+  	ctx.fillStyle = "black";
+  	if (findElement < 10) {
+   		ctx.fillText(findElement, positionsX[findElement] - 3, positionsY[findElement] + 3);
+ 		} else {
+   		ctx.fillText(findElement, positionsX[findElement] - 6, positionsY[findElement] + 3);
+  	}
+  	ctx.stroke();
+  
+  	setTimeout(function() {
+			ctx.beginPath();
+  		ctx.fillStyle="white";
+  		ctx.arc(positionsX[findElement], positionsY[findElement], nodeSize, 0, 2 * Math.PI);
+  		ctx.fill();
+  		ctx.fillStyle="black";
+  		ctx.strokeStyle="black";
+  		if (findElement < 10) {
+   			ctx.fillText(findElement, positionsX[findElement] - 3, positionsY[findElement] + 3);
+ 			} else {
+   			ctx.fillText(findElement, positionsX[findElement] - 6, positionsY[findElement] + 3);
+  		}
+  		ctx.stroke();
+			}, 2000);
+  	}
+}
+//Above is find code. There is some bug tho.. once element is found and 
+//animated, it ends with a thicker node border...
+//Also, simple if else to verify element is not working properly :( (FIXED)
+///////////////////////////////////////////////////////////////////////
+
+document.getElementById("connectivity").onclick = function () {
+	
+  var input = prompt ("what is the start and end node? (If the graph is directed, the order you input the nodes will matter)", "1 2");
+  var list = input.match(/\d+/g);
+  var begin = parseInt(list[0]);
+  var end = parseInt(list[1]);
+	var temp = [];
+  var visited = [];
+  for (var x = 0; x <= nodes; x++) {
+		visited.push(0);
+  }
+  if (begin < start || end > nodes) {
+		alert ("A node you have selected does not belong to this graph");
+	} else {
+		temp.push(begin);
+    while (temp.length != 0) {
+			
+      for (var x = 0; x < temp.length; x++) {
+				
+        if (visited[temp[x]] == 0) {
+        	
+          for (var i = 0; i < graph[temp[x]].length; i++) {
+						
+            if (weighted == 1) {
+							if (graph[temp[x]][i][0] == end) {
+								alert (begin + " is connected to " + end + "!\nIf you would like to visualize how this works, try the DFS/BFS animation!");
+            		temp = [];
+            	} else {
+            		temp.push(graph[temp[x]][i][0]);
+            	}
+          	} else {
+							if (graph[temp[x]][i] == end) {
+								alert (begin + " is connected to " + end + "!\nIf you would like to visualize how this works, try the DFS/BFS animation!");
+              	temp = [];
+            	} else {
+            		temp.push(graph[temp[x]][i]);
+            	}
+						}
+        	}
+          
+        }
+        
+        visited[temp[x]] = 1;
+      }
+      if (temp.length == 1) {
+				alert (begin + " is not connected to " + end + ".");
+      }
+      temp.shift();
+		}
+    
+	}
+
+}
+
+//Above is check connectivity code (uses BFS);
+//Using end > nodes might not take into consideration for a graph with a 0 node
+///////////////////////////////////////////////////////////////////////
+
+document.getElementById("dijkstra").onclick = function () {
+
+	var input = prompt ("what is the start and end node? (If the graph is directed, the order you input the nodes will matter)", "1 2");
+  var list = input.match(/\d+/g);
+  var begin = parseInt(list[0]);
+  var end = parseInt(list[1]);
+	var temp = [];
+  var visited = [];
+  for (var x = 0; x <= nodes; x++) {
+		visited.push(-1);
+  }
+  if (begin < start || end > nodes) {
+		alert ("A node you have selected does not belong to this graph");
+	} else {
+		temp.push(begin);
+    visited[begin] = 0;
+    while (temp.length != 0) {
+    
+    	for (var x = 0; x < temp.length; x++) {
+      
+      	for (var i = 0; i < graph[temp[x]].length; i++) {
+					
+          if (weighted == 1) {
+						
+            if (visited[graph[temp[x]][i][0]] == -1 || visited[graph[temp[x]][i][0]]  > visited[temp[x]] + graph[temp[x]][i][1]) {
+							visited[graph[temp[x]][i][0]] = visited[temp[x]] + graph[temp[x]][i][1];
+              temp.push(graph[temp[x]][i][0]);
+						}
+            
+					} else {
+						if (visited[graph[temp[x]][i]] == -1 || visited[graph[temp[x]][i]] > visited[temp[x]] + 1) {
+							visited[graph[temp[x]][i]] = visited[temp[x]] + 1;
+              temp.push(graph[temp[x]][i]);
+            }
+          }
+          
+				}
+      
+      }
+    
+    	temp.shift();
+    }
+		
+    alert ("The distance between" + begin + " to " + end + " has a minimum cost of " + visited[end]);
+	}
+  
+}
+
+//Above is code for dijkstra's algorithm
+///////////////////////////////////////////////////////////////////////
+
+document.getElementById("level").onclick = function () {
+
+	/*var input = prompt ("what is the start and end node? (If the graph is directed, the order you input the nodes will matter)", "1 2");
+  var list = input.match(/\d+/g);
+  var begin = parseInt(list[0]);
+  var end = parseInt(list[1]);
+	var temp = [];
+  var visited = [];
+  for (var x = 0; x <= nodes; x++) {
+		visited.push(-1);
+  }
+  if (begin < start || end > nodes) {
+		alert ("A node you have selected does not belong to this graph");
+	} else {
+		var upperLimit = 1;
+    var newUpperLimit = 0;
+    while (temp.length != 0) {
+			newUpperLimit = 0;
+      
+      for (var x = 0; x < temp.length; x++) {
+        
+        for (var i = 0; i < graph[temp[x]].length; i++) {
+					
+				}
+        
+      }
+      
+		}
+	
+  }*/
+
+}
+
+//Above is code for determining the level of the element
+//NEED TO FINISH THIS!!
+////////////////////////////////////////////////////////////////////////
+
+document.getElementById("bfs").onclick = function () {
+var input = prompt ("what is the start and end node? (If the graph is directed, the order you input the nodes will matter)", "1 2");
+  var list = input.match(/\d+/g);
+  var begin = parseInt(list[0]);
+  var end = parseInt(list[1]);
+	var temp = [];
+  var visited = [];
+  for (var x = 0; x <= nodes; x++) {
+		visited.push(0);
+  }
+  if (begin < start || end > nodes) {
+		alert ("A node you have selected does not belong to this graph");
+	} else {
+		temp.push(begin);
+    while (temp.length != 0) {
+			
+      for (var x = 0; x < temp.length; x++) {
+				
+        if (visited[temp[x]] == 0) {
+        	
+          for (var i = 0; i < graph[temp[x]].length; i++) {
+						
+            if (weighted == 1) {
+							if (graph[temp[x]][i][0] == end) {
+            		temp = [];
+            	} else {
+            		temp.push(graph[temp[x]][i][0]);
+                if (directed == 1) {
+									setTimeout(drawRedEdgeDirected(temp[x], graph[temp[x]][i][0]),1000);
+                  setTimeout(RedrawEdgeDirected(temp[x], graph[temp[x]][i][0]),2000);
+                } else {
+									setTimeout(drawRedEdgeUndirected(temp[x], graph[temp[x]][i][0]),1000);
+                  setTimeout(RedrawEdgeUndirected(temp[x], graph[temp[x]][i][0]),2000);
+                }
+            	}
+          	} else {
+							if (graph[temp[x]][i] == end) {
+              	temp = [];
+            	} //else {
+            		temp.push(graph[temp[x]][i]);
+                if (directed == 1) {
+									setTimeout(drawRedEdgeDirected(temp[x], graph[temp[x]][i]),1000);
+                  setTimeout(RedrawEdgeDirected(temp[x], graph[temp[x]][i]),2000);
+                } else {
+									setTimeout(function () {                  	
+                  
+                    ctx.globalCompositeOperation="source-over";
+  ctx.strokeStyle = "#ff0000";
+  ctx.lineWidth = 2;
+	ctx.beginPath();
+	alert ("hyello?");
+  ctx.moveTo(positionsX[temp[x]] + 1, positionsY[temp[x]] + 1);
+	ctx.lineTo(positionsX[graph[temp[x]][i]] + 1, positionsY[graph[temp[x]][i]] + 1);
+	ctx.stroke();
+                    
+                  }, 2000);
+                  //setTimeout(RedrawEdgeUndirected(temp[x], graph[temp[x]][i]),8000);
+                }
+            	//}
+						}
+        	}
+          
+        }
+        
+        visited[temp[x]] = 1;
+      }
+      
+      temp.shift();
+		}
+    
+	}
+}
+//Above is code for BFS visualisation
+////////////////////////////////////////////////////////////////////////
+
+document.getElementById("children").onclick = function () {
+	
+  var nodeQuery = prompt("For which node would you like to know the children of?");
+  
+  if (nodeQuery < start || nodeQuery > nodes) {
+		alert ("A node you have selected does not belong to this graph");
+	} else {
+		alert ("Node: " + nodeQuery + "\nNumber of Child nodes: " + graph[nodeQuery].length + "\nChildren nodes: " + graph[nodeQuery]);
+	}
+  
+}
+
+//Above is code for checking children
+////////////////////////////////////////////////////////////////////////
+
+document.getElementById("bipartite").onclick = function () {
+	
+  var temp = [];
+  var coloring = [];
+	var begin;
+	for (var x = 0; x < graph.length; x++) {
+    if (graph[x].length > 0) {
+      begin = x;
+    }
+    coloring.push(-1);
+	}
+	temp.push(begin);
+  coloring[begin] = 0;
+  while (temp.length != 0) {
+			
+   for (var x = 0; x < temp.length; x++) {
+				    	
+     for (var i = 0; i < graph[temp[x]].length; i++) {
+						
+  	   if (weighted == 1) {
+					if (coloring[graph[temp[x]][i][0]] == coloring[temp[x]]) {
+         		alert ("This graph is not bipartite.");
+            temp = [];
+            return 0;
+         	} else {
+          		if (coloring[graph[temp[x]][i][0]] == -1) {
+          			if (coloring[temp[x]] == 0) {
+									coloring[graph[temp[x]][i][0]] = 1;
+              	} else {
+									coloring[graph[temp[x]][i][0]] = 0;
+								}
+                temp.push(graph[temp[x]][i][0]);
+              }
+              }
+         	} else {
+          if (coloring[graph[temp[x]][i]] == coloring[temp[x]]) {
+						alert ("This graph is not bipartite");
+            temp = [];
+            return 0;
+         	} else {
+          	if (coloring[graph[temp[x]][i]] == -1) {
+          			if (coloring[temp[x]] == 0) {
+									coloring[graph[temp[x]][i]] = 1;
+              	} else {
+									coloring[graph[temp[x]][i]] = 0;
+								}
+                temp.push(graph[temp[x]][i]);
+                }
+              }
+         	}
+          }
+          temp.shift();
+				}
+       }
+  	//}
+	//}
+	
+  alert ("This graph is bipartite!");
+}
+
+
+//Bipartite Check Code;
+/////////////////////////////////////////////////////////////////////////
+
+function redrawNode (a) {
+			ctx.beginPath();
+  		ctx.fillStyle="white";
+  		ctx.arc(positionsX[a], positionsY[a], nodeSize, 0, 2 * Math.PI);
+  		ctx.fill();
+  		ctx.fillStyle="black";
+  		ctx.strokeStyle="black";
+  		if (a < 10) {
+   			ctx.fillText(a, positionsX[a] - 3, positionsY[a] + 3);
+ 			} else {
+   			ctx.fillText(a, positionsX[a] - 6, positionsY[a] + 3);
+  		}
+  		ctx.stroke();
+}
+
+function drawRedEdgeUndirected (a, b) {
+	alert ("works");
+ 	/*ctx.globalCompositeOperation="source-over";
+  ctx.strokeStyle = "#ff0000";
+  ctx.lineWidth = 2;
+	ctx.beginPath();
+	ctx.moveTo(positionsX[a] + 1, positionsY[a] + 1);
+	ctx.lineTo(positionsX[b] + 1, positionsY[b] + 1);
+	ctx.stroke();
+  redrawNode (a);
+  redrawNode (b);*/
+}
+
+function RedrawEdgeUndirected (a, b) {
+ 	ctx.globalCompositeOperation="source-over";
+  ctx.strokeStyle = randomColor();
+  ctx.lineWidth = 2;
+	ctx.beginPath();
+	ctx.moveTo(positionsX[a] + 1, positionsY[a] + 1);
+	ctx.lineTo(positionsX[b] + 1, positionsY[b] + 1);
+	ctx.stroke();
+}
+
+function drawRedEdgeDirected (a, b) {
+ 	ctx.globalCompositeOperation="source-over";
+  //Add gradient to show direction
+  var grd = ctx.createLinearGradient(positionsX[a] + 1, positionsY[a] + 1, positionsX[b] + 1, positionsY[b] + 1);
+	grd.addColorStop(0,"black");
+	grd.addColorStop(1, "#ff0000");
+	ctx.strokeStyle = grd;
+  ////////////////////////////////
+  ctx.lineWidth = 2;
+	ctx.beginPath();
+	ctx.moveTo(positionsX[a] + 1, positionsY[a] + 1);
+	ctx.lineTo(positionsX[b] + 1, positionsY[b] + 1);
+	ctx.stroke();
+}
+
+function RedrawEdgeDirected (a, b) {
+	ctx.globalCompositeOperation="source-over";
+  //Add gradient to show direction
+  var grd = ctx.createLinearGradient(positionsX[a] + 1, positionsY[a] + 1, positionsX[b] + 1, positionsY[b] + 1);
+	grd.addColorStop(0,"black");
+	grd.addColorStop(1, randomColor());
+	ctx.strokeStyle = grd;
+  ////////////////////////////////
+  ctx.lineWidth = 2;
+	ctx.beginPath();
+	ctx.moveTo(positionsX[a] + 1, positionsY[a] + 1);
+	ctx.lineTo(positionsX[b] + 1, positionsY[b] + 1);
+	ctx.stroke();
+}
+
+//Above is code for drawing edges during visualizations
+//////////////////////////////////////////////////////////////////////
+
+function randomColor() {
+    var letters = '0123456789ABCDEF';
+    var color = '#';
+    for (var x = 0; x < 6; x++ ) {
+        color += letters[Math.floor(Math.random() * 16)];
+    }
+    return color;
+}
+
+//Random Color Generator. Used by several functions for visualizations
+///////////////////////////////////////////////////////////////////////
+
+//sample weighted graph: 
+/*
+4 4
+1 2 24
+1 4 20
+3 1 3
+4 3 12
+*/
+</script>
+
+</body>
